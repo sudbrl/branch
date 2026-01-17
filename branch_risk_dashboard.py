@@ -13,18 +13,52 @@ def check_password():
     
     def password_entered():
         """Checks whether a password entered by the user is correct."""
-        if hmac.compare_digest(st.session_state["username"], st.secrets["credentials"]["username"]) and \
-           hmac.compare_digest(st.session_state["password"], st.secrets["credentials"]["password"]):
-            st.session_state["password_correct"] = True
-            st.session_state["user_name"] = st.secrets["credentials"].get("name", "User")
-            st.session_state["user_role"] = st.secrets["credentials"].get("role", "Administrator")
-            del st.session_state["password"]  # Don't store password
-            del st.session_state["username"]  # Don't store username
-        else:
+        try:
+            # Check if secrets are properly configured
+            if "credentials" not in st.secrets:
+                st.error("⚠️ Authentication not configured. Please add credentials to Streamlit secrets.")
+                return
+            
+            if "username" not in st.secrets["credentials"] or "password" not in st.secrets["credentials"]:
+                st.error("⚠️ Missing username or password in secrets configuration.")
+                return
+            
+            if hmac.compare_digest(st.session_state["username"], st.secrets["credentials"]["username"]) and \
+               hmac.compare_digest(st.session_state["password"], st.secrets["credentials"]["password"]):
+                st.session_state["password_correct"] = True
+                st.session_state["user_name"] = st.secrets["credentials"].get("name", "User")
+                st.session_state["user_role"] = st.secrets["credentials"].get("role", "Administrator")
+                del st.session_state["password"]  # Don't store password
+                del st.session_state["username"]  # Don't store username
+            else:
+                st.session_state["password_correct"] = False
+        except Exception as e:
+            st.error(f"⚠️ Authentication error: {str(e)}")
             st.session_state["password_correct"] = False
 
     # First run, show login screen
     if "password_correct" not in st.session_state:
+        # Check if secrets are configured
+        if "credentials" not in st.secrets:
+            st.error("""
+            ⚠️ **Authentication Not Configured**
+            
+            Please add the following to your Streamlit secrets:
+            
+            ```toml
+            [credentials]
+            username = "admin"
+            password = "admin123"
+            name = "Administrator"
+            role = "System Administrator"
+            ```
+            
+            **For Streamlit Cloud:** Go to App Settings → Secrets
+            
+            **For Local:** Create `.streamlit/secrets.toml` file
+            """)
+            st.stop()
+        
         st.markdown("""
             <div style='text-align: center; padding: 2rem 0;'>
                 <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
