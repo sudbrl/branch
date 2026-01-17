@@ -3,121 +3,9 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
-import hashlib
 
 # ==========================================
-# 0. AUTHENTICATION SYSTEM
-# ==========================================
-def make_hashes(password):
-    """Create hash of password"""
-    return hashlib.sha256(str.encode(password)).hexdigest()
-
-def check_hashes(password, hashed_text):
-    """Verify password against hash"""
-    if make_hashes(password) == hashed_text:
-        return hashed_text
-    return False
-
-def login_user(username, password):
-    """Authenticate user credentials"""
-    try:
-        # Get credentials from secrets
-        users = st.secrets["credentials"]["usernames"]
-        
-        if username in users:
-            stored_password = users[username]["password"]
-            if check_hashes(password, stored_password):
-                return True
-    except Exception as e:
-        st.error("Authentication configuration error. Please contact administrator.")
-    return False
-
-def get_user_info(username):
-    """Get user information from secrets"""
-    try:
-        users = st.secrets["credentials"]["usernames"]
-        if username in users:
-            return users[username]
-    except:
-        pass
-    return None
-
-def login_page():
-    """Display login page"""
-    st.markdown("""
-        <div style='text-align: center; padding: 2rem 0;'>
-            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        width: 120px; height: 120px; border-radius: 30px; 
-                        margin: 0 auto 2rem auto; display: flex; align-items: center; 
-                        justify-content: center; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);'>
-                <span style='font-size: 4rem;'>🏦</span>
-            </div>
-            <h1 style='color: #1e293b; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;'>
-                Branch Risk Analytics Platform
-            </h1>
-            <p style='color: #64748b; font-size: 1.1rem; margin-bottom: 3rem;'>
-                Enterprise-Grade Risk Assessment & Portfolio Management
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    
-    with col2:
-        st.markdown("""
-            <div style='background: white; padding: 3rem 2.5rem; border-radius: 16px; 
-                        box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-top: 4px solid #667eea;'>
-                <h2 style='color: #1e293b; text-align: center; margin-bottom: 2rem; font-size: 1.8rem;'>
-                    🔐 Secure Login
-                </h2>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        with st.form("login_form"):
-            username = st.text_input("👤 Username", placeholder="Enter your username")
-            password = st.text_input("🔑 Password", type="password", placeholder="Enter your password")
-            
-            col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-            with col_btn2:
-                submit = st.form_submit_button("Login", use_container_width=True)
-            
-            if submit:
-                if username and password:
-                    if login_user(username, password):
-                        st.session_state['authenticated'] = True
-                        st.session_state['username'] = username
-                        user_info = get_user_info(username)
-                        if user_info:
-                            st.session_state['user_name'] = user_info.get('name', username)
-                            st.session_state['user_role'] = user_info.get('role', 'User')
-                        st.success("✅ Login successful!")
-                        st.rerun()
-                    else:
-                        st.error("❌ Invalid username or password")
-                else:
-                    st.warning("⚠️ Please enter both username and password")
-        
-        st.markdown("""
-            <div style='text-align: center; margin-top: 2rem; padding-top: 1.5rem; 
-                        border-top: 1px solid #e2e8f0;'>
-                <p style='color: #94a3b8; font-size: 0.9rem;'>
-                    🔒 Secured by enterprise-grade authentication
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-def logout_user():
-    """Clear session state and logout"""
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
-
-# Initialize session state
-if 'authenticated' not in st.session_state:
-    st.session_state['authenticated'] = False
-
-# ==========================================
-# 2. PAGE CONFIGURATION
+# 1. PAGE CONFIGURATION
 # ==========================================
 st.set_page_config(
     page_title="Branch Risk Analytics Platform",
@@ -127,7 +15,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 3. MODERN STYLING
+# 2. MODERN STYLING
 # ==========================================
 st.markdown("""
     <style>
@@ -401,38 +289,8 @@ def get_grade_color(grade):
     return colors.get(grade, colors['C'])
 
 # ==========================================
-# 4. AUTHENTICATION CHECK
+# 4. SIDEBAR & UPLOAD
 # ==========================================
-# Check if user is authenticated
-if not st.session_state['authenticated']:
-    login_page()
-    st.stop()
-
-# ==========================================
-# 5. SIDEBAR & UPLOAD
-# ==========================================
-# User Info in Sidebar
-st.sidebar.markdown(f"""
-    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
-        <div style='text-align: center; color: white;'>
-            <div style='font-size: 3rem; margin-bottom: 0.5rem;'>👤</div>
-            <div style='font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem;'>
-                {st.session_state.get('user_name', 'User')}
-            </div>
-            <div style='font-size: 0.85rem; opacity: 0.9;'>
-                {st.session_state.get('user_role', 'User')}
-            </div>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-if st.sidebar.button("🚪 Logout", use_container_width=True):
-    logout_user()
-
-st.sidebar.markdown("---")
-
 st.sidebar.markdown("### 📁 Data Management")
 st.sidebar.markdown("---")
 
