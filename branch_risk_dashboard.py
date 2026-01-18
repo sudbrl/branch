@@ -844,7 +844,7 @@ if uploaded_file:
             st.markdown('</div>', unsafe_allow_html=True)
 
         # ==========================================
-        # TAB 3: DETAILED REPORTS
+        # TAB 3: DETAILED REPORTS (UPDATED)
         # ==========================================
         with tab3:
             st.markdown("### 📈 Comprehensive Portfolio Data")
@@ -865,20 +865,41 @@ if uploaded_file:
                     grade_filter = ['A', 'B', 'C']
             
             with col_search:
-                search_term = st.text_input("🔍 Search Branch Code", "")
+                search_term = st.text_input("🔍 Search Branch Code", "", help="Enter Branch Code to validate and filter")
+                
+                # --- VALIDATION LOGIC ---
+                if search_term:
+                    # Check for exact match in the full dataset
+                    exact_match = search_term in df['BranchCode'].astype(str).values
+                    # Check for partial match (what the filter uses)
+                    partial_match = df['BranchCode'].astype(str).str.contains(search_term, case=False).any()
+                    
+                    if exact_match:
+                        st.success(f"✅ Valid Branch Code: {search_term} found.")
+                    elif partial_match:
+                        st.info(f"ℹ️ Partial match found for '{search_term}'. Showing related branches.")
+                    else:
+                        st.error(f"❌ Invalid Branch Code: '{search_term}' does not exist in the records.")
             
             # Apply filters
             filtered_df = df[df['Final Grade'].isin(grade_filter)]
             if search_term:
-                filtered_df = filtered_df[filtered_df['BranchCode'].str.contains(search_term, case=False)]
+                filtered_df = filtered_df[filtered_df['BranchCode'].astype(str).str.contains(search_term, case=False)]
             
             # Summary Statistics
             st.markdown('<div class="chart-card">', unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Filtered Branches", len(filtered_df))
-            col2.metric("Avg Score", f"{filtered_df['Total Score'].mean():.2f}")
-            col3.metric("Min Score", f"{filtered_df['Total Score'].min():.2f}")
-            col4.metric("Max Score", f"{filtered_df['Total Score'].max():.2f}")
+            
+            if not filtered_df.empty:
+                col2.metric("Avg Score", f"{filtered_df['Total Score'].mean():.2f}")
+                col3.metric("Min Score", f"{filtered_df['Total Score'].min():.2f}")
+                col4.metric("Max Score", f"{filtered_df['Total Score'].max():.2f}")
+            else:
+                col2.metric("Avg Score", "0.00")
+                col3.metric("Min Score", "0.00")
+                col4.metric("Max Score", "0.00")
+                
             st.markdown('</div>', unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -886,28 +907,42 @@ if uploaded_file:
             # Data Table
             st.markdown('<div class="chart-card">', unsafe_allow_html=True)
             
-            # Format numeric columns
-            display_df = filtered_df.copy()
-            numeric_cols = display_df.select_dtypes(include=['float64', 'int64']).columns
-            
-            def highlight_grade(row):
-                if row['Final Grade'] == 'A':
-                    return ['background-color: #d1fae5'] * len(row)
-                elif row['Final Grade'] == 'B':
-                    return ['background-color: #fef3c7'] * len(row)
-                elif row['Final Grade'] == 'C':
-                    return ['background-color: #fee2e2'] * len(row)
-                return [''] * len(row)
-            
-            styled_df = display_df.style.format(
-                {col: "{:.2f}" for col in numeric_cols}
-            ).apply(highlight_grade, axis=1)
-            
-            st.dataframe(
-                styled_df,
-                use_container_width=True,
-                height=500
-            )
+            if not filtered_df.empty:
+                # Format numeric columns
+                display_df = filtered_df.copy()
+                
+                # Identify numeric columns
+                numeric_cols = display_df.select_dtypes(include=['float64', 'int64']).columns
+                
+                # --- PERCENTAGE FORMATTING LOGIC ---
+                # dynamically find columns with '%' in the name
+                pct_cols = [c for c in numeric_cols if '%' in c]
+                regular_cols = [c for c in numeric_cols if c not in pct_cols]
+                
+                def highlight_grade(row):
+                    if row['Final Grade'] == 'A':
+                        return ['background-color: #d1fae5'] * len(row)
+                    elif row['Final Grade'] == 'B':
+                        return ['background-color: #fef3c7'] * len(row)
+                    elif row['Final Grade'] == 'C':
+                        return ['background-color: #fee2e2'] * len(row)
+                    return [''] * len(row)
+                
+                # Build the formatting dictionary
+                # Regular numbers get 2 decimal places
+                format_dict = {col: "{:.2f}" for col in regular_cols}
+                # Percentage columns get converted (0.12 -> 12.00%)
+                format_dict.update({col: "{:.2%}" for col in pct_cols})
+                
+                styled_df = display_df.style.format(format_dict).apply(highlight_grade, axis=1)
+                
+                st.dataframe(
+                    styled_df,
+                    use_container_width=True,
+                    height=500
+                )
+            else:
+                st.warning("No data available for the selected filters.")
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -1034,7 +1069,7 @@ else:
         <div style='background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
                     padding: 3rem 2rem; border-radius: 16px; margin-top: 2rem;'>
             <h3 style='text-align: center; color: #1e293b; font-size: 1.8rem; 
-                       font-weight: 700; margin-bottom: 2.5rem;'>
+                        font-weight: 700; margin-bottom: 2.5rem;'>
                 Platform Capabilities
             </h3>
     """, unsafe_allow_html=True)
