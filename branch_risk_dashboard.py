@@ -6,159 +6,6 @@ from datetime import datetime
 import hmac
 
 # ==========================================
-# 0. AUTHENTICATION SYSTEM
-# ==========================================
-def check_password():
-    """Returns `True` if the user had the correct password."""
-    
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        try:
-            # Check if secrets are properly configured
-            if "credentials" not in st.secrets:
-                st.error("⚠️ Authentication not configured. Please add credentials to Streamlit secrets.")
-                return
-            
-            if "username" not in st.secrets["credentials"] or "password" not in st.secrets["credentials"]:
-                st.error("⚠️ Missing username or password in secrets configuration.")
-                return
-            
-            if hmac.compare_digest(st.session_state["username"], st.secrets["credentials"]["username"]) and \
-               hmac.compare_digest(st.session_state["password"], st.secrets["credentials"]["password"]):
-                st.session_state["password_correct"] = True
-                st.session_state["user_name"] = st.secrets["credentials"].get("name", "User")
-                st.session_state["user_role"] = st.secrets["credentials"].get("role", "Administrator")
-                del st.session_state["password"]  # Don't store password
-                del st.session_state["username"]  # Don't store username
-            else:
-                st.session_state["password_correct"] = False
-        except Exception as e:
-            st.error(f"⚠️ Authentication error: {str(e)}")
-            st.session_state["password_correct"] = False
-
-    # First run, show login screen
-    if "password_correct" not in st.session_state:
-        # Check if secrets are configured
-        if "credentials" not in st.secrets:
-            st.error("""
-            ⚠️ **Authentication Not Configured**
-            
-            Please add the following to your Streamlit secrets:
-            
-            ```toml
-            [credentials]
-            username = "admin"
-            password = "admin123"
-            name = "Administrator"
-            role = "System Administrator"
-            ```
-            
-            **For Streamlit Cloud:** Go to App Settings → Secrets
-            
-            **For Local:** Create `.streamlit/secrets.toml` file
-            """)
-            st.stop()
-        
-        st.markdown("""
-            <div style='text-align: center; padding: 2rem 0;'>
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                            width: 120px; height: 120px; border-radius: 30px; 
-                            margin: 0 auto 2rem auto; display: flex; align-items: center; 
-                            justify-content: center; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);'>
-                    <span style='font-size: 4rem;'>🏦</span>
-                </div>
-                <h1 style='color: #1e293b; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;'>
-                    Branch Risk Analytics Platform
-                </h1>
-                <p style='color: #64748b; font-size: 1.1rem; margin-bottom: 3rem;'>
-                    Enterprise-Grade Risk Assessment & Portfolio Management
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns([1, 1.5, 1])
-        
-        with col2:
-            st.markdown("""
-                <div style='background: white; padding: 3rem 2.5rem; border-radius: 16px; 
-                            box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-top: 4px solid #667eea;'>
-                    <h2 style='color: #1e293b; text-align: center; margin-bottom: 2rem; font-size: 1.8rem;'>
-                        🔐 Secure Login
-                    </h2>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            st.text_input("👤 Username", key="username", placeholder="Enter your username")
-            st.text_input("🔑 Password", type="password", key="password", placeholder="Enter your password")
-            
-            col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-            with col_btn2:
-                st.button("Login", on_click=password_entered, use_container_width=True)
-            
-            st.markdown("""
-                <div style='text-align: center; margin-top: 2rem; padding-top: 1.5rem; 
-                            border-top: 1px solid #e2e8f0;'>
-                    <p style='color: #94a3b8; font-size: 0.9rem;'>
-                        🔒 Secured by enterprise-grade authentication
-                    </p>
-                </div>
-            """, unsafe_allow_html=True)
-        return False
-    
-    # Password incorrect, show error
-    elif not st.session_state["password_correct"]:
-        st.markdown("""
-            <div style='text-align: center; padding: 2rem 0;'>
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                            width: 120px; height: 120px; border-radius: 30px; 
-                            margin: 0 auto 2rem auto; display: flex; align-items: center; 
-                            justify-content: center; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);'>
-                    <span style='font-size: 4rem;'>🏦</span>
-                </div>
-                <h1 style='color: #1e293b; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;'>
-                    Branch Risk Analytics Platform
-                </h1>
-                <p style='color: #64748b; font-size: 1.1rem; margin-bottom: 3rem;'>
-                    Enterprise-Grade Risk Assessment & Portfolio Management
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns([1, 1.5, 1])
-        
-        with col2:
-            st.markdown("""
-                <div style='background: white; padding: 3rem 2.5rem; border-radius: 16px; 
-                            box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-top: 4px solid #667eea;'>
-                    <h2 style='color: #1e293b; text-align: center; margin-bottom: 2rem; font-size: 1.8rem;'>
-                        🔐 Secure Login
-                    </h2>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            st.text_input("👤 Username", key="username", placeholder="Enter your username")
-            st.text_input("🔑 Password", type="password", key="password", placeholder="Enter your password")
-            
-            col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-            with col_btn2:
-                st.button("Login", on_click=password_entered, use_container_width=True)
-            
-            st.error("❌ Invalid username or password")
-            
-            st.markdown("""
-                <div style='text-align: center; margin-top: 2rem; padding-top: 1.5rem; 
-                            border-top: 1px solid #e2e8f0;'>
-                    <p style='color: #94a3b8; font-size: 0.9rem;'>
-                        🔒 Secured by enterprise-grade authentication
-                    </p>
-                </div>
-            """, unsafe_allow_html=True)
-        return False
-    else:
-        # Password correct
-        return True
-
-# ==========================================
 # 1. PAGE CONFIGURATION
 # ==========================================
 st.set_page_config(
@@ -167,10 +14,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Check authentication
-if not check_password():
-    st.stop()
 
 # ==========================================
 # 2. MODERN STYLING
@@ -311,161 +154,241 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
     }
     
-    /* Divider */
-    hr {
-        margin: 2rem 0;
-        border: none;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+    /* DataFrame Styling */
+    .dataframe {
+        border-radius: 8px;
+        overflow: hidden;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. CALCULATION ENGINE
+# 3. AUTHENTICATION SYSTEM
 # ==========================================
-def check_condition(data_val, op, rule_val):
-    try:
-        op = str(op).strip().upper()
-        if op in ["ALL", "ELSE"]: return True
-        
+def check_password():
+    """Returns `True` if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
         try:
-            d_num = float(data_val)
-            r_num = float(rule_val)
-            if op == ">": return d_num > r_num
-            if op == "<": return d_num < r_num
-            if op in [">=", "=>"]: return d_num >= r_num
-            if op in ["<=", "=<"]: return d_num <= r_num
-            if op == "=": return d_num == r_num
+            if "credentials" not in st.secrets:
+                st.error("⚠️ Authentication not configured. Please add credentials to Streamlit secrets.")
+                return
+            
+            if "username" not in st.secrets["credentials"] or "password" not in st.secrets["credentials"]:
+                st.error("⚠️ Missing username or password in secrets configuration.")
+                return
+            
+            if hmac.compare_digest(st.session_state["username"], st.secrets["credentials"]["username"]) and \
+               hmac.compare_digest(st.session_state["password"], st.secrets["credentials"]["password"]):
+                st.session_state["password_correct"] = True
+                st.session_state["user_name"] = st.secrets["credentials"].get("name", "User")
+                st.session_state["user_role"] = st.secrets["credentials"].get("role", "Administrator")
+                del st.session_state["password"]  # Don't store password
+                del st.session_state["username"]  # Don't store username
+            else:
+                st.session_state["password_correct"] = False
+        except Exception as e:
+            st.error(f"⚠️ Authentication error: {str(e)}")
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # First run, show login screen
+        if "credentials" not in st.secrets:
+            st.warning("⚠️ Secrets not found. Please create .streamlit/secrets.toml")
+            st.stop()
+        
+        st.markdown("""
+            <div style='text-align: center; padding: 2rem 0;'>
+                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                            width: 120px; height: 120px; border-radius: 30px; 
+                            margin: 0 auto 2rem auto; display: flex; align-items: center; 
+                            justify-content: center; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);'>
+                    <span style='font-size: 4rem;'>🏦</span>
+                </div>
+                <h1 style='color: #1e293b; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;'>
+                    Branch Risk Analytics Platform
+                </h1>
+                <p style='color: #64748b; font-size: 1.1rem; margin-bottom: 3rem;'>
+                    Enterprise-Grade Risk Assessment & Portfolio Management
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 1.5, 1])
+        with col2:
+            st.markdown("""
+                <div style='background: white; padding: 3rem 2.5rem; border-radius: 16px; 
+                            box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-top: 4px solid #667eea;'>
+                    <h2 style='color: #1e293b; text-align: center; margin-bottom: 2rem; font-size: 1.8rem;'>
+                        🔐 Secure Login
+                    </h2>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            st.text_input("👤 Username", key="username", placeholder="Enter your username")
+            st.text_input("🔑 Password", type="password", key="password", placeholder="Enter your password")
+            
+            col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+            with col_btn2:
+                st.button("Login", on_click=password_entered, use_container_width=True)
+            
+            if st.session_state.get("password_correct") is False:
+                st.error("❌ Invalid username or password")
+
+            st.markdown("""
+                <div style='text-align: center; margin-top: 2rem; padding-top: 1.5rem; 
+                            border-top: 1px solid #e2e8f0;'>
+                    <p style='color: #94a3b8; font-size: 0.9rem;'>
+                        🔒 Secured by enterprise-grade authentication
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+        return False
+    
+    elif not st.session_state["password_correct"]:
+        st.session_state["password_correct"] = None
+        st.rerun()
+        return False
+    else:
+        return True
+
+# ==========================================
+# 4. MAIN APPLICATION
+# ==========================================
+if check_password():
+    
+    # ------------------------------------------
+    # 4.1. SIDEBAR PROFILE
+    # ------------------------------------------
+    with st.sidebar:
+        st.markdown("### 👤 User Profile")
+        st.success(f"**Welcome, {st.session_state.get('user_name', 'User')}**")
+        st.caption(f"Role: {st.session_state.get('user_role', 'Admin')}")
+        
+        if st.button("🚪 Logout", type="secondary", use_container_width=True):
+            del st.session_state["password_correct"]
+            st.rerun()
+        st.markdown("---")
+
+    # ------------------------------------------
+    # 4.2. CALCULATION ENGINE
+    # ------------------------------------------
+    def check_condition(data_val, op, rule_val):
+        try:
+            op = str(op).strip().upper()
+            if op in ["ALL", "ELSE"]: return True
+            
+            try:
+                d_num = float(data_val)
+                r_num = float(rule_val)
+                if op == ">": return d_num > r_num
+                if op == "<": return d_num < r_num
+                if op in [">=", "=>"]: return d_num >= r_num
+                if op in ["<=", "=<"]: return d_num <= r_num
+                if op == "=": return d_num == r_num
+            except:
+                pass 
+            
+            d_str = str(data_val).upper().strip()
+            r_str = str(rule_val).upper().strip()
+            if op == "CONTAINS": return r_str in d_str
+            if op == "=": return d_str == r_str
+            if op == "<>": return d_str != r_str
+            return False
         except:
-            pass 
-        
-        d_str = str(data_val).upper().strip()
-        r_str = str(rule_val).upper().strip()
-        if op == "CONTAINS": return r_str in d_str
-        if op == "=": return d_str == r_str
-        if op == "<>": return d_str != r_str
-        return False
-    except:
-        return False
+            return False
 
-def get_grade(score, df_grades):
-    try:
-        for _, row in df_grades.iterrows():
-            if row['Min Score'] <= score <= row['Max Score']:
-                return row['Grade']
-    except:
+    def get_grade(score, df_grades):
+        try:
+            for _, row in df_grades.iterrows():
+                if row['Min Score'] <= score <= row['Max Score']:
+                    return row['Grade']
+        except:
+            return "N/A"
         return "N/A"
-    return "N/A"
 
-def process_uploaded_file(uploaded_file):
-    try:
-        xls = pd.ExcelFile(uploaded_file)
-        df_rules = pd.read_excel(xls, "Sheet1")
-        df_data = pd.read_excel(xls, "Sheet2", dtype={'BranchCode': str})
-        df_grades = pd.read_excel(xls, "Sheet3")
-        
-        df_rules.columns = [c.strip() for c in df_rules.columns]
-        df_data.columns = [c.strip() for c in df_data.columns]
-        df_grades.columns = [c.strip() for c in df_grades.columns]
-        
-        unique_params = df_rules['Column Name'].unique()
-        for param in unique_params:
-            if param in df_data.columns:
-                df_data[f"{param} Score"] = 0.0
-        
-        df_data["Total Score"] = 0.0
-        
-        for index, row in df_data.iterrows():
-            total_score = 0.0
+    @st.cache_data(show_spinner=False)
+    def process_uploaded_file(file_path):
+        try:
+            # Pandas can read directly from URL
+            xls = pd.ExcelFile(file_path)
+            df_rules = pd.read_excel(xls, "Sheet1")
+            df_data = pd.read_excel(xls, "Sheet2", dtype={'BranchCode': str})
+            df_grades = pd.read_excel(xls, "Sheet3")
+            
+            df_rules.columns = [c.strip() for c in df_rules.columns]
+            df_data.columns = [c.strip() for c in df_data.columns]
+            df_grades.columns = [c.strip() for c in df_grades.columns]
+            
+            unique_params = df_rules['Column Name'].unique()
             for param in unique_params:
-                if param not in df_data.columns: continue
-                param_rules = df_rules[df_rules['Column Name'] == param]
-                for _, rule in param_rules.iterrows():
-                    if check_condition(row[param], rule['Operator'], rule['Value']):
-                        score = float(rule['Score'])
-                        df_data.at[index, f"{param} Score"] = score
-                        total_score += score
-                        break 
-            df_data.at[index, "Total Score"] = total_score
+                if param in df_data.columns:
+                    df_data[f"{param} Score"] = 0.0
+            
+            df_data["Total Score"] = 0.0
+            
+            for index, row in df_data.iterrows():
+                total_score = 0.0
+                for param in unique_params:
+                    if param not in df_data.columns: continue
+                    param_rules = df_rules[df_rules['Column Name'] == param]
+                    for _, rule in param_rules.iterrows():
+                        if check_condition(row[param], rule['Operator'], rule['Value']):
+                            score = float(rule['Score'])
+                            df_data.at[index, f"{param} Score"] = score
+                            total_score += score
+                            break 
+                df_data.at[index, "Total Score"] = total_score
+            
+            df_data["Final Grade"] = df_data["Total Score"].apply(lambda x: get_grade(x, df_grades))
+            return df_data, None
+        except Exception as e:
+            return None, str(e)
+
+    def get_grade_color(grade):
+        colors = {
+            'A': {'primary': '#10b981', 'light': '#d1fae5', 'gradient': 'linear-gradient(135deg, #10b981 0%, #059669 100%)'},
+            'B': {'primary': '#f59e0b', 'light': '#fef3c7', 'gradient': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'},
+            'C': {'primary': '#ef4444', 'light': '#fee2e2', 'gradient': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'}
+        }
+        return colors.get(grade, colors['C'])
+
+    # ------------------------------------------
+    # 4.3. SIDEBAR & DATA SOURCE
+    # ------------------------------------------
+    st.sidebar.markdown("### ℹ️ About")
+    st.sidebar.info(
+        """
+        **Branch Risk Analytics Platform**
         
-        df_data["Final Grade"] = df_data["Total Score"].apply(lambda x: get_grade(x, df_grades))
-        return df_data, None
-    except Exception as e:
-        return None, str(e)
+        A comprehensive risk assessment tool for branch portfolio management.
+        
+        - Real-time risk scoring
+        - Multi-parameter analysis
+        - Grade-based classification
+        - Interactive visualizations
+        """
+    )
 
-def get_grade_color(grade):
-    """Return color scheme for grade"""
-    colors = {
-        'A': {'primary': '#10b981', 'light': '#d1fae5', 'gradient': 'linear-gradient(135deg, #10b981 0%, #059669 100%)'},
-        'B': {'primary': '#f59e0b', 'light': '#fef3c7', 'gradient': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'},
-        'C': {'primary': '#ef4444', 'light': '#fee2e2', 'gradient': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'}
-    }
-    return colors.get(grade, colors['C'])
+    # ------------------------------------------
+    # 4.4. LOAD DATA FROM SECRETS
+    # ------------------------------------------
+    # Retrieve URL from secrets instead of hardcoding
+    if "data" in st.secrets and "url" in st.secrets["data"]:
+        DATA_URL = st.secrets["data"]["url"]
+    else:
+        st.error("⚠️ **Configuration Error:** Data URL not found in secrets.")
+        st.info("Please add `[data] url = '...'` to your `.streamlit/secrets.toml` file.")
+        st.stop()
 
-# ==========================================
-# 4. SIDEBAR & UPLOAD
-# ==========================================
-# User Info in Sidebar
-st.sidebar.markdown(f"""
-    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
-        <div style='text-align: center; color: white;'>
-            <div style='font-size: 3rem; margin-bottom: 0.5rem;'>👤</div>
-            <div style='font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem;'>
-                {st.session_state.get('user_name', 'User')}
-            </div>
-            <div style='font-size: 0.85rem; opacity: 0.9;'>
-                {st.session_state.get('user_role', 'User')}
-            </div>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
+    # ------------------------------------------
+    # 4.5. DASHBOARD RENDER
+    # ------------------------------------------
 
-if st.sidebar.button("🚪 Logout", use_container_width=True):
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
+    with st.spinner("🔄 Fetching and processing risk data..."):
+        df, error = process_uploaded_file(DATA_URL)
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📁 Data Management")
-st.sidebar.markdown("---")
-
-uploaded_file = st.sidebar.file_uploader(
-    "Upload Risk Data",
-    type=["xlsx"],
-    help="Upload Excel file with risk rules and branch data"
-)
-
-if uploaded_file:
-    st.sidebar.success("✓ File uploaded successfully")
-    st.sidebar.markdown(f"**Filename:** {uploaded_file.name}")
-    st.sidebar.markdown(f"**Size:** {uploaded_file.size / 1024:.2f} KB")
-    st.sidebar.markdown("---")
-
-st.sidebar.markdown("### ℹ️ About")
-st.sidebar.info(
-    """
-    **Branch Risk Analytics Platform**
-    
-    A comprehensive risk assessment tool for branch portfolio management.
-    
-    - Real-time risk scoring
-    - Multi-parameter analysis
-    - Grade-based classification
-    - Interactive visualizations
-    """
-)
-
-# ==========================================
-# 5. MAIN DASHBOARD
-# ==========================================
-
-if uploaded_file:
-    with st.spinner("🔄 Processing risk calculations..."):
-        df, error = process_uploaded_file(uploaded_file)
-    
     if error:
         st.error(f"❌ **Error processing file:** {error}")
     else:
@@ -477,9 +400,7 @@ if uploaded_file:
             </div>
         """, unsafe_allow_html=True)
         
-        # ==========================================
-        # 6. TABS INTERFACE
-        # ==========================================
+        # Tabs
         tab1, tab2, tab3 = st.tabs(["📊 Executive Dashboard", "🎯 Branch Analytics", "📈 Detailed Reports"])
 
         # ==========================================
@@ -663,7 +584,6 @@ if uploaded_file:
                     key="tab2_grade_filter"
                 )
                 
-                # Handle "All" selection
                 if 'All' in filter_grade or not filter_grade:
                     filter_grade = ['A', 'B', 'C']
             
@@ -771,10 +691,8 @@ if uploaded_file:
                     score = branch_data[col]
                     contribution = (score / branch_data['Total Score'] * 100) if branch_data['Total Score'] > 0 else 0
                     
-                    # Get the actual data value for this parameter
                     actual_value = branch_data.get(param, 'N/A')
                     
-                    # Format the actual value nicely
                     if isinstance(actual_value, (int, float)):
                         actual_display = f"{actual_value:.2f}"
                     else:
@@ -849,7 +767,6 @@ if uploaded_file:
         with tab3:
             st.markdown("### 📈 Comprehensive Portfolio Data")
             
-            # Filter Controls
             col_grade, col_search, col_export = st.columns([1, 2, 1])
             
             with col_grade:
@@ -860,7 +777,6 @@ if uploaded_file:
                     key="tab3_grade_filter"
                 )
                 
-                # Handle "All" selection
                 if 'All' in grade_filter or not grade_filter:
                     grade_filter = ['A', 'B', 'C']
             
@@ -870,15 +786,24 @@ if uploaded_file:
             # Apply filters
             filtered_df = df[df['Final Grade'].isin(grade_filter)]
             if search_term:
+                branch_exists = df['BranchCode'].str.contains(search_term, case=False).any()
+                if not branch_exists:
+                    st.warning(f"⚠️ Branch Code '{search_term}' not found in the dataset.")
+                
                 filtered_df = filtered_df[filtered_df['BranchCode'].str.contains(search_term, case=False)]
             
             # Summary Statistics
             st.markdown('<div class="chart-card">', unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Filtered Branches", len(filtered_df))
-            col2.metric("Avg Score", f"{filtered_df['Total Score'].mean():.2f}")
-            col3.metric("Min Score", f"{filtered_df['Total Score'].min():.2f}")
-            col4.metric("Max Score", f"{filtered_df['Total Score'].max():.2f}")
+            if len(filtered_df) > 0:
+                col2.metric("Avg Score", f"{filtered_df['Total Score'].mean():.2f}")
+                col3.metric("Min Score", f"{filtered_df['Total Score'].min():.2f}")
+                col4.metric("Max Score", f"{filtered_df['Total Score'].max():.2f}")
+            else:
+                col2.metric("Avg Score", "N/A")
+                col3.metric("Min Score", "N/A")
+                col4.metric("Max Score", "N/A")
             st.markdown('</div>', unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -886,28 +811,30 @@ if uploaded_file:
             # Data Table
             st.markdown('<div class="chart-card">', unsafe_allow_html=True)
             
-            # Format numeric columns
-            display_df = filtered_df.copy()
-            numeric_cols = display_df.select_dtypes(include=['float64', 'int64']).columns
-            
-            def highlight_grade(row):
-                if row['Final Grade'] == 'A':
-                    return ['background-color: #d1fae5'] * len(row)
-                elif row['Final Grade'] == 'B':
-                    return ['background-color: #fef3c7'] * len(row)
-                elif row['Final Grade'] == 'C':
-                    return ['background-color: #fee2e2'] * len(row)
-                return [''] * len(row)
-            
-            styled_df = display_df.style.format(
-                {col: "{:.2f}" for col in numeric_cols}
-            ).apply(highlight_grade, axis=1)
-            
-            st.dataframe(
-                styled_df,
-                use_container_width=True,
-                height=500
-            )
+            if not filtered_df.empty:
+                display_df = filtered_df.copy()
+                numeric_cols = display_df.select_dtypes(include=['float64', 'int64']).columns
+                
+                def highlight_grade(row):
+                    if row['Final Grade'] == 'A':
+                        return ['background-color: #d1fae5'] * len(row)
+                    elif row['Final Grade'] == 'B':
+                        return ['background-color: #fef3c7'] * len(row)
+                    elif row['Final Grade'] == 'C':
+                        return ['background-color: #fee2e2'] * len(row)
+                    return [''] * len(row)
+                
+                styled_df = display_df.style.format(
+                    {col: "{:.2f}" for col in numeric_cols}
+                ).apply(highlight_grade, axis=1)
+                
+                st.dataframe(
+                    styled_df,
+                    use_container_width=True,
+                    height=500
+                )
+            else:
+                st.info("No data available for the selected filters.")
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -917,194 +844,21 @@ if uploaded_file:
             
             col1, col2 = st.columns(2)
             with col1:
-                csv = filtered_df.to_csv(index=False)
-                st.download_button(
-                    label="📥 Download CSV",
-                    data=csv,
-                    file_name=f"branch_risk_report_{datetime.now().strftime('%Y%m%d')}.csv",
-                    mime="text/csv",
-                )
+                if not filtered_df.empty:
+                    csv = filtered_df.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download CSV",
+                        data=csv,
+                        file_name=f"branch_risk_report_{datetime.now().strftime('%Y%m%d')}.csv",
+                        mime="text/csv",
+                    )
+                else:
+                    st.download_button(
+                        label="📥 Download CSV",
+                        data="",
+                        disabled=True,
+                        file_name="empty.csv"
+                    )
             
             with col2:
                 st.info(f"📊 Dataset contains {len(filtered_df)} branches with {len(filtered_df.columns)} attributes")
-
-else:
-    # Professional Welcome Screen
-    st.markdown(f"""
-        <div class="dashboard-header">
-            <h1 class="dashboard-title">🏦 Branch Risk Analytics Platform</h1>
-            <p class="dashboard-subtitle">Enterprise-Grade Risk Assessment & Portfolio Management Solution</p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Hero Section
-    st.markdown("""
-        <div style='text-align: center; padding: 3rem 0 2rem 0;'>
-            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        width: 120px; height: 120px; border-radius: 30px; 
-                        margin: 0 auto 2rem auto; display: flex; align-items: center; 
-                        justify-content: center; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);'>
-                <span style='font-size: 4rem;'>📊</span>
-            </div>
-            <h2 style='color: #1e293b; font-size: 2rem; font-weight: 700; margin-bottom: 1rem;'>
-                Welcome to Your Risk Intelligence Hub
-            </h2>
-            <p style='color: #64748b; font-size: 1.1rem; max-width: 600px; margin: 0 auto;'>
-                Transform raw data into actionable insights with our comprehensive risk analytics platform
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Main Content Grid
-    col1, col2, col3 = st.columns([1, 1, 1])
-    
-    with col1:
-        st.markdown("""
-            <div style='background: white; padding: 2rem; border-radius: 16px; 
-                        box-shadow: 0 4px 20px rgba(0,0,0,0.08); height: 100%;
-                        border-top: 4px solid #667eea;'>
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            width: 60px; height: 60px; border-radius: 12px;
-                            display: flex; align-items: center; justify-content: center;
-                            margin-bottom: 1.5rem;'>
-                    <span style='font-size: 2rem;'>📁</span>
-                </div>
-                <h3 style='color: #1e293b; font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem;'>
-                    Quick Start Guide
-                </h3>
-                <div style='color: #64748b; line-height: 1.8;'>
-                    <p style='margin-bottom: 0.8rem;'><strong style='color: #667eea;'>Step 1:</strong> Navigate to the sidebar</p>
-                    <p style='margin-bottom: 0.8rem;'><strong style='color: #667eea;'>Step 2:</strong> Upload your Excel file</p>
-                    <p style='margin-bottom: 0.8rem;'><strong style='color: #667eea;'>Step 3:</strong> Explore interactive dashboards</p>
-                    <p><strong style='color: #667eea;'>Step 4:</strong> Export insights & reports</p>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-            <div style='background: white; padding: 2rem; border-radius: 16px; 
-                        box-shadow: 0 4px 20px rgba(0,0,0,0.08); height: 100%;
-                        border-top: 4px solid #10b981;'>
-                <div style='background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                            width: 60px; height: 60px; border-radius: 12px;
-                            display: flex; align-items: center; justify-content: center;
-                            margin-bottom: 1.5rem;'>
-                    <span style='font-size: 2rem;'>📋</span>
-                </div>
-                <h3 style='color: #1e293b; font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem;'>
-                    File Requirements
-                </h3>
-                <div style='color: #64748b; line-height: 1.8;'>
-                    <p style='margin-bottom: 0.8rem;'><strong style='color: #10b981;'>Sheet 1:</strong> Risk Rules Configuration</p>
-                    <p style='margin-bottom: 0.8rem;'><strong style='color: #10b981;'>Sheet 2:</strong> Branch Data & Metrics</p>
-                    <p style='margin-bottom: 0.8rem;'><strong style='color: #10b981;'>Sheet 3:</strong> Grading Criteria Matrix</p>
-                    <p><strong style='color: #10b981;'>Format:</strong> Excel (.xlsx) only</p>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-            <div style='background: white; padding: 2rem; border-radius: 16px; 
-                        box-shadow: 0 4px 20px rgba(0,0,0,0.08); height: 100%;
-                        border-top: 4px solid #f59e0b;'>
-                <div style='background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                            width: 60px; height: 60px; border-radius: 12px;
-                            display: flex; align-items: center; justify-content: center;
-                            margin-bottom: 1.5rem;'>
-                    <span style='font-size: 2rem;'>✨</span>
-                </div>
-                <h3 style='color: #1e293b; font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem;'>
-                    Key Features
-                </h3>
-                <div style='color: #64748b; line-height: 1.8;'>
-                    <p style='margin-bottom: 0.8rem;'>🎯 Real-time risk scoring engine</p>
-                    <p style='margin-bottom: 0.8rem;'>📊 Interactive data visualizations</p>
-                    <p style='margin-bottom: 0.8rem;'>🔍 Deep-dive branch analytics</p>
-                    <p>💾 Export & reporting tools</p>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # Feature Highlights Section
-    st.markdown("""
-        <div style='background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
-                    padding: 3rem 2rem; border-radius: 16px; margin-top: 2rem;'>
-            <h3 style='text-align: center; color: #1e293b; font-size: 1.8rem; 
-                       font-weight: 700; margin-bottom: 2.5rem;'>
-                Platform Capabilities
-            </h3>
-    """, unsafe_allow_html=True)
-    
-    feat_col1, feat_col2, feat_col3, feat_col4 = st.columns(4)
-    
-    with feat_col1:
-        st.markdown("""
-            <div style='text-align: center; padding: 1.5rem;'>
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            width: 70px; height: 70px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center;
-                            margin: 0 auto 1rem auto; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);'>
-                    <span style='font-size: 2rem;'>📍</span>
-                </div>
-                <h4 style='color: #1e293b; font-weight: 700; margin-bottom: 0.5rem;'>Multi-Branch</h4>
-                <p style='color: #64748b; font-size: 0.9rem;'>Portfolio overview & tracking</p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with feat_col2:
-        st.markdown("""
-            <div style='text-align: center; padding: 1.5rem;'>
-                <div style='background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                            width: 70px; height: 70px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center;
-                            margin: 0 auto 1rem auto; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);'>
-                    <span style='font-size: 2rem;'>🎯</span>
-                </div>
-                <h4 style='color: #1e293b; font-weight: 700; margin-bottom: 0.5rem;'>Smart Analytics</h4>
-                <p style='color: #64748b; font-size: 0.9rem;'>AI-powered insights</p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with feat_col3:
-        st.markdown("""
-            <div style='text-align: center; padding: 1.5rem;'>
-                <div style='background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                            width: 70px; height: 70px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center;
-                            margin: 0 auto 1rem auto; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);'>
-                    <span style='font-size: 2rem;'>🔄</span>
-                </div>
-                <h4 style='color: #1e293b; font-weight: 700; margin-bottom: 0.5rem;'>Dynamic Filters</h4>
-                <p style='color: #64748b; font-size: 0.9rem;'>Real-time data filtering</p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with feat_col4:
-        st.markdown("""
-            <div style='text-align: center; padding: 1.5rem;'>
-                <div style='background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                            width: 70px; height: 70px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center;
-                            margin: 0 auto 1rem auto; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);'>
-                    <span style='font-size: 2rem;'>📈</span>
-                </div>
-                <h4 style='color: #1e293b; font-weight: 700; margin-bottom: 0.5rem;'>Visual Reports</h4>
-                <p style='color: #64748b; font-size: 0.9rem;'>Interactive dashboards</p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Call to Action
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("""
-        <div style='text-align: center; padding: 2rem 0;'>
-            <p style='color: #64748b; font-size: 1.1rem; margin-bottom: 1rem;'>
-                Ready to get started? Upload your data file from the sidebar →
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
