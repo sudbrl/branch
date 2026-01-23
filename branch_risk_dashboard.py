@@ -156,9 +156,6 @@ def check_password():
 # 4. OPTIMIZED CALCULATION ENGINE
 # ==========================================
 def get_grade(score, df_grades):
-    # Vectorized grade assignment is tricky with intervals, but apply is okay for just the final column
-    # or using pd.cut if intervals are uniform, but they likely aren't.
-    # We will stick to a simple apply for the grade mapping as it's not the bottleneck.
     try:
         for _, row in df_grades.iterrows():
             if row['Min Score'] <= score <= row['Max Score']:
@@ -169,8 +166,7 @@ def get_grade(score, df_grades):
 
 def apply_rules_vectorized(df, df_rules, unique_params):
     """
-    Optimized function to apply rules using vectorized operations instead of row-by-row iteration.
-    This significantly improves loading time for large datasets.
+    Optimized function to apply rules using vectorized operations.
     """
     # Initialize score columns
     for param in unique_params:
@@ -184,7 +180,7 @@ def apply_rules_vectorized(df, df_rules, unique_params):
         # Get rules for this parameter
         rules = df_rules[df_rules['Column Name'] == param]
         
-        # Track which rows have already been assigned a score for this param (First Match Wins logic)
+        # Track which rows have already been assigned a score
         is_assigned = pd.Series([False] * len(df), index=df.index)
         
         for _, rule in rules.iterrows():
@@ -207,7 +203,6 @@ def apply_rules_vectorized(df, df_rules, unique_params):
                 elif op in ["<=", "=<"]:
                     current_mask = pd.to_numeric(col_data, errors='coerce') <= float(val)
                 elif op == "=":
-                    # Check if column is numeric to decide comparison type
                     is_numeric_col = pd.to_numeric(col_data, errors='coerce').notna().all()
                     if is_numeric_col:
                         current_mask = pd.to_numeric(col_data, errors='coerce') == float(val)
@@ -220,7 +215,7 @@ def apply_rules_vectorized(df, df_rules, unique_params):
                 else:
                     current_mask = pd.Series([False] * len(df), index=df.index)
                 
-                # Fill NaNs (failed conversions) with False
+                # Fill NaNs with False
                 current_mask = current_mask.fillna(False)
                 
                 # Apply score to rows that match AND haven't been assigned yet
@@ -342,12 +337,10 @@ if check_password():
         with tab2:
             st.markdown("### 🎯 Individual Branch Deep-Dive Analysis")
             
-            # --- MODIFICATION: Make Select Box Small ---
-            col_select_container, col_rest = st.columns([1, 3]) # 1:3 ratio keeps it small
+            col_select_container, col_rest = st.columns([1, 3])
             with col_select_container:
                 branch_list = sorted(df['BranchCode'].unique())
                 selected_branch = st.selectbox("🔍 Select Branch Code", branch_list)
-            # -------------------------------------------
             
             branch_data = df[df['BranchCode'] == selected_branch].iloc[0]
             grade = branch_data['Final Grade']
@@ -401,7 +394,11 @@ if check_password():
             filtered_df = df[df['Final Grade'].isin(grade_filter)]
             if search_term: filtered_df = filtered_df[filtered_df['BranchCode'].str.contains(search_term, case=False)]
             
-            st.dataframe(filtered_df, use_container_width=True, height=500)
+            # --- FIX: Apply standard formatting to the report view as well ---
+            numeric_report_cols = filtered_df.select_dtypes(include=['float64', 'int64']).columns
+            report_format_dict = {col: "{:.2f}" for col in numeric_report_cols}
+            
+            st.dataframe(filtered_df.style.format(report_format_dict), use_container_width=True, height=500)
             if not filtered_df.empty:
                 st.download_button("📥 Download CSV", filtered_df.to_csv(index=False), "risk_report.csv", "text/csv")
 
@@ -412,8 +409,6 @@ if check_password():
             selected_attr = st.selectbox("Select Attribute", all_columns, key="attr_select")
             
             if selected_attr:
-                # --- MODIFICATION: Removed the "Filtering by: X" text line here ---
-                
                 filtered_attr_df = df.copy()
                 if pd.api.types.is_numeric_dtype(df[selected_attr]):
                     min_val, max_val = float(df[selected_attr].min()), float(df[selected_attr].max())
@@ -431,7 +426,12 @@ if check_password():
                 if not filtered_attr_df.empty:
                     st.markdown(f"**Found {len(filtered_attr_df)} records**")
                     numeric_cols = filtered_attr_df.select_dtypes(include=['float64', 'int64']).columns
-                    format_dict = {col: "{:.2%}" if "%" in col else "{:.2f}" for col in numeric_cols}
+                    
+                    # --- FIX: STRICT 2 DECIMAL PLACES WITHOUT MULTIPLICATION ---
+                    # Previous code used "{:.2%}" which multiplies by 100. 
+                    # We now use "{:.2f}" to keep the source value but ensure 2 decimals.
+                    format_dict = {col: "{:.2f}" for col in numeric_cols}
+                    
                     st.dataframe(filtered_attr_df.style.format(format_dict), use_container_width=True, height=600)
                 else:
                     st.warning("No records found.")
