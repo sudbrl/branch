@@ -919,5 +919,3 @@ if check_password():
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.warning("No records found matching the criteria.")
-
-```
