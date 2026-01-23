@@ -265,12 +265,20 @@ def get_grade_color(grade):
     }
     return colors.get(grade, colors['C'])
 
-def format_value(val):
-    """Helper to format values based on type: 2 decimals for floats, no decimals for ints"""
+def format_value(val, col_name=""):
+    """Helper to format values based on type and column name"""
+    # 1. Percentage Columns (e.g., 'Net NPL%') -> Format as 12.12%
+    if "%" in col_name and isinstance(val, (int, float, np.number)):
+         return f"{val:.2%}"
+
+    # 2. Standard Floats -> Format as 12.12
     if isinstance(val, (float, np.float64)):
         return f"{val:.2f}"
+    
+    # 3. Integers -> Format as 12
     if isinstance(val, (int, np.int64)):
         return f"{val}"
+    
     return str(val)
 
 # ==========================================
@@ -385,8 +393,8 @@ if check_password():
             
             with col_breakdown:
                 st.markdown('<div class="chart-card"><div class="chart-title">📊 Score Breakdown</div>', unsafe_allow_html=True)
-                # MODIFICATION: Formatted 'Actual' column using the helper function
-                param_data = [{'Parameter': p, 'Actual': format_value(branch_data.get(p, 'N/A')), 'Score': f"{s:.2f}"} for p, s in zip(params, scores)]
+                # MODIFICATION: Pass column name to format_value to detect '%'
+                param_data = [{'Parameter': p, 'Actual': format_value(branch_data.get(p, 'N/A'), p), 'Score': f"{s:.2f}"} for p, s in zip(params, scores)]
                 st.dataframe(pd.DataFrame(param_data), use_container_width=True, hide_index=True, height=390)
                 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -403,13 +411,15 @@ if check_password():
             filtered_df = df[df['Final Grade'].isin(grade_filter)]
             if search_term: filtered_df = filtered_df[filtered_df['BranchCode'].str.contains(search_term, case=False)]
             
-            # MODIFICATION: Accurate formatting matching source (Ints as Ints, Floats as 2 decimal Floats)
+            # MODIFICATION: Dynamic Formatting
             report_format_dict = {}
             for col in filtered_df.columns:
-                if pd.api.types.is_integer_dtype(filtered_df[col]):
-                    report_format_dict[col] = "{:.0f}"
+                if "%" in col:
+                    report_format_dict[col] = "{:.2%}" # Percentage with 2 decimals
                 elif pd.api.types.is_float_dtype(filtered_df[col]):
-                    report_format_dict[col] = "{:.2f}"
+                    report_format_dict[col] = "{:.2f}" # Float with 2 decimals
+                elif pd.api.types.is_integer_dtype(filtered_df[col]):
+                    report_format_dict[col] = "{:.0f}" # Int with 0 decimals
             
             st.dataframe(filtered_df.style.format(report_format_dict), use_container_width=True, height=500)
             if not filtered_df.empty:
@@ -439,14 +449,15 @@ if check_password():
                 if not filtered_attr_df.empty:
                     st.markdown(f"**Found {len(filtered_attr_df)} records**")
                     
-                    # MODIFICATION: Accurate formatting matching source (Ints as Ints, Floats as 2 decimal Floats)
-                    # Removed "{:.2%}" logic entirely to preserve source format
+                    # MODIFICATION: Dynamic Formatting for Attribute Table
                     attr_format_dict = {}
                     for col in filtered_attr_df.columns:
-                        if pd.api.types.is_integer_dtype(filtered_attr_df[col]):
-                            attr_format_dict[col] = "{:.0f}"
+                        if "%" in col:
+                            attr_format_dict[col] = "{:.2%}"
                         elif pd.api.types.is_float_dtype(filtered_attr_df[col]):
                             attr_format_dict[col] = "{:.2f}"
+                        elif pd.api.types.is_integer_dtype(filtered_attr_df[col]):
+                            attr_format_dict[col] = "{:.0f}"
 
                     st.dataframe(filtered_attr_df.style.format(attr_format_dict), use_container_width=True, height=600)
                 else:
