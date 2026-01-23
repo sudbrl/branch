@@ -267,8 +267,9 @@ def get_grade_color(grade):
 
 def format_value(val, col_name=""):
     """Helper to format values based on type and column name"""
-    # 1. Percentage Columns (e.g., 'Net NPL%') -> Format as 12.12%
-    if "%" in col_name and isinstance(val, (int, float, np.number)):
+    # 1. Percentage Columns (Only if NOT a Score column)
+    #    This ensures "Net NPL%" gets formatted, but "Net NPL% Score" is treated as a number
+    if "%" in col_name and "Score" not in col_name and isinstance(val, (int, float, np.number)):
          return f"{val:.2%}"
 
     # 2. Standard Floats -> Format as 12.12
@@ -393,7 +394,7 @@ if check_password():
             
             with col_breakdown:
                 st.markdown('<div class="chart-card"><div class="chart-title">📊 Score Breakdown</div>', unsafe_allow_html=True)
-                # MODIFICATION: Pass column name to format_value to detect '%'
+                # MODIFICATION: Pass column name to format_value
                 param_data = [{'Parameter': p, 'Actual': format_value(branch_data.get(p, 'N/A'), p), 'Score': f"{s:.2f}"} for p, s in zip(params, scores)]
                 st.dataframe(pd.DataFrame(param_data), use_container_width=True, hide_index=True, height=390)
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -414,12 +415,13 @@ if check_password():
             # MODIFICATION: Dynamic Formatting
             report_format_dict = {}
             for col in filtered_df.columns:
-                if "%" in col:
-                    report_format_dict[col] = "{:.2%}" # Percentage with 2 decimals
+                # Apply % formatting ONLY if '%' in name AND 'Score' NOT in name
+                if "%" in col and "Score" not in col:
+                    report_format_dict[col] = "{:.2%}" # Percentage
                 elif pd.api.types.is_float_dtype(filtered_df[col]):
-                    report_format_dict[col] = "{:.2f}" # Float with 2 decimals
+                    report_format_dict[col] = "{:.2f}" # Float
                 elif pd.api.types.is_integer_dtype(filtered_df[col]):
-                    report_format_dict[col] = "{:.0f}" # Int with 0 decimals
+                    report_format_dict[col] = "{:.0f}" # Int
             
             st.dataframe(filtered_df.style.format(report_format_dict), use_container_width=True, height=500)
             if not filtered_df.empty:
@@ -452,7 +454,8 @@ if check_password():
                     # MODIFICATION: Dynamic Formatting for Attribute Table
                     attr_format_dict = {}
                     for col in filtered_attr_df.columns:
-                        if "%" in col:
+                        # Apply % formatting ONLY if '%' in name AND 'Score' NOT in name
+                        if "%" in col and "Score" not in col:
                             attr_format_dict[col] = "{:.2%}"
                         elif pd.api.types.is_float_dtype(filtered_attr_df[col]):
                             attr_format_dict[col] = "{:.2f}"
