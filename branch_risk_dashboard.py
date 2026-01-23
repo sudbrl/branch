@@ -1,11 +1,3 @@
-Here is the updated code with the requested modifications:
-
-1. **Removed "Filter by Grade"** from the **Branch Analytics** tab.
-2. **Changed the text color** of the dashboard title to a distinct **Gold/Off-White** (`#f8fafc` with a gold text shadow) to make it stand out against the header gradient.
-3. **Added a new tab "🔍 Attribute Filter"** that allows filtering by any specific column attribute.
-4. **Preserved Attribute Formatting** by dynamically detecting numeric columns vs categorical columns and applying percentage formatting if "%" is detected in the column name.
-
-```python
 import streamlit as st
 import pandas as pd
 import plotly.express as px
