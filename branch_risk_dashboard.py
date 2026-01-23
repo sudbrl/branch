@@ -265,6 +265,14 @@ def get_grade_color(grade):
     }
     return colors.get(grade, colors['C'])
 
+def format_value(val):
+    """Helper to format values based on type: 2 decimals for floats, no decimals for ints"""
+    if isinstance(val, (float, np.float64)):
+        return f"{val:.2f}"
+    if isinstance(val, (int, np.int64)):
+        return f"{val}"
+    return str(val)
+
 # ==========================================
 # 5. MAIN APPLICATION
 # ==========================================
@@ -377,7 +385,8 @@ if check_password():
             
             with col_breakdown:
                 st.markdown('<div class="chart-card"><div class="chart-title">📊 Score Breakdown</div>', unsafe_allow_html=True)
-                param_data = [{'Parameter': p, 'Actual': str(branch_data.get(p, 'N/A')), 'Score': f"{s:.2f}"} for p, s in zip(params, scores)]
+                # MODIFICATION: Formatted 'Actual' column using the helper function
+                param_data = [{'Parameter': p, 'Actual': format_value(branch_data.get(p, 'N/A')), 'Score': f"{s:.2f}"} for p, s in zip(params, scores)]
                 st.dataframe(pd.DataFrame(param_data), use_container_width=True, hide_index=True, height=390)
                 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -394,9 +403,13 @@ if check_password():
             filtered_df = df[df['Final Grade'].isin(grade_filter)]
             if search_term: filtered_df = filtered_df[filtered_df['BranchCode'].str.contains(search_term, case=False)]
             
-            # --- FIX: Apply standard formatting to the report view as well ---
-            numeric_report_cols = filtered_df.select_dtypes(include=['float64', 'int64']).columns
-            report_format_dict = {col: "{:.2f}" for col in numeric_report_cols}
+            # MODIFICATION: Accurate formatting matching source (Ints as Ints, Floats as 2 decimal Floats)
+            report_format_dict = {}
+            for col in filtered_df.columns:
+                if pd.api.types.is_integer_dtype(filtered_df[col]):
+                    report_format_dict[col] = "{:.0f}"
+                elif pd.api.types.is_float_dtype(filtered_df[col]):
+                    report_format_dict[col] = "{:.2f}"
             
             st.dataframe(filtered_df.style.format(report_format_dict), use_container_width=True, height=500)
             if not filtered_df.empty:
@@ -425,13 +438,16 @@ if check_password():
                 st.markdown("---")
                 if not filtered_attr_df.empty:
                     st.markdown(f"**Found {len(filtered_attr_df)} records**")
-                    numeric_cols = filtered_attr_df.select_dtypes(include=['float64', 'int64']).columns
                     
-                    # --- FIX: STRICT 2 DECIMAL PLACES WITHOUT MULTIPLICATION ---
-                    # Previous code used "{:.2%}" which multiplies by 100. 
-                    # We now use "{:.2f}" to keep the source value but ensure 2 decimals.
-                    format_dict = {col: "{:.2f}" for col in numeric_cols}
-                    
-                    st.dataframe(filtered_attr_df.style.format(format_dict), use_container_width=True, height=600)
+                    # MODIFICATION: Accurate formatting matching source (Ints as Ints, Floats as 2 decimal Floats)
+                    # Removed "{:.2%}" logic entirely to preserve source format
+                    attr_format_dict = {}
+                    for col in filtered_attr_df.columns:
+                        if pd.api.types.is_integer_dtype(filtered_attr_df[col]):
+                            attr_format_dict[col] = "{:.0f}"
+                        elif pd.api.types.is_float_dtype(filtered_attr_df[col]):
+                            attr_format_dict[col] = "{:.2f}"
+
+                    st.dataframe(filtered_attr_df.style.format(attr_format_dict), use_container_width=True, height=600)
                 else:
                     st.warning("No records found.")
