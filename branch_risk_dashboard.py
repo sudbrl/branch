@@ -316,7 +316,7 @@ if check_password():
             </div>
         """, unsafe_allow_html=True)
         
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Executive Dashboard", "🎯 Branch Analytics", "📈 Detailed Reports", "🔍 Attribute Filter"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Executive Dashboard", "🎯 Branch Analytics","🔍 Attribute Filter"])
 
         # TAB 1: EXECUTIVE
         with tab1:
@@ -399,34 +399,7 @@ if check_password():
                 st.dataframe(pd.DataFrame(param_data), use_container_width=True, hide_index=True, height=390)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-        # TAB 3: REPORTS
-        with tab3:
-            st.markdown("### 📈 Comprehensive Portfolio Data")
-            col_grade, col_search, col_export = st.columns([1, 2, 1])
-            with col_grade:
-                grade_filter = st.multiselect("Filter by Grade", ['All', 'A', 'B', 'C'], default=['All'])
-                if 'All' in grade_filter or not grade_filter: grade_filter = ['A', 'B', 'C']
-            with col_search:
-                search_term = st.text_input("🔍 Search Branch Code")
-            
-            filtered_df = df[df['Final Grade'].isin(grade_filter)]
-            if search_term: filtered_df = filtered_df[filtered_df['BranchCode'].str.contains(search_term, case=False)]
-            
-            # MODIFICATION: Dynamic Formatting
-            report_format_dict = {}
-            for col in filtered_df.columns:
-                # Apply % formatting ONLY if '%' in name AND 'Score' NOT in name
-                if "%" in col and "Score" not in col:
-                    report_format_dict[col] = "{:.2%}" # Percentage
-                elif pd.api.types.is_float_dtype(filtered_df[col]):
-                    report_format_dict[col] = "{:.2f}" # Float
-                elif pd.api.types.is_integer_dtype(filtered_df[col]):
-                    report_format_dict[col] = "{:.0f}" # Int
-            
-            st.dataframe(filtered_df.style.format(report_format_dict), use_container_width=True, height=500)
-            if not filtered_df.empty:
-                st.download_button("📥 Download CSV", filtered_df.to_csv(index=False), "risk_report.csv", "text/csv")
-
+       
         # TAB 4: ATTRIBUTE FILTER
         with tab4:
             st.markdown("### 🔍 Filter by Attributes")
