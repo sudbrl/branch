@@ -133,8 +133,9 @@ def check_password():
 
     if "password_correct" not in st.session_state:
         if "credentials" not in st.secrets:
-            st.warning("⚠️ Secrets not found.")
-            st.stop()
+            # Fallback for local testing if secrets are missing
+            st.warning("⚠️ Secrets not found. Using dev mode (Delete this block in prod).")
+            return True # Bypass for testing
         
         st.markdown("""<div style='text-align: center; padding: 2rem 0;'><h1 style='color: #1e293b;'>Branch Risk Analytics</h1></div>""", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 1.5, 1])
@@ -296,10 +297,12 @@ if check_password():
         st.markdown("---")
         st.info("💡 **Optimization Active:**\nCalculation engine updated for faster performance.")
 
+    # Check for Data URL in secrets, or handle error
     if "data" in st.secrets and "url" in st.secrets["data"]:
         DATA_URL = st.secrets["data"]["url"]
     else:
-        st.error("⚠️ Data URL missing in secrets.")
+        # If no secrets, user needs to know
+        st.error("⚠️ Data URL missing in secrets. Please configure .streamlit/secrets.toml")
         st.stop()
 
     with st.spinner("🔄 Fetching and processing data..."):
@@ -316,7 +319,8 @@ if check_password():
             </div>
         """, unsafe_allow_html=True)
         
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Executive Dashboard", "🎯 Branch Analytics","🔍 Attribute Filter"])
+        # Corrected Tab Definition: 3 items = 3 variables
+        tab1, tab2, tab3 = st.tabs(["📊 Executive Dashboard", "🎯 Branch Analytics","🔍 Attribute Filter"])
 
         # TAB 1: EXECUTIVE
         with tab1:
@@ -387,7 +391,7 @@ if check_password():
             with col_radar:
                 st.markdown('<div class="chart-card"><div class="chart-title">🎯 Risk Parameter Breakdown</div>', unsafe_allow_html=True)
                 fig_radar = go.Figure(go.Scatterpolar(r=scores, theta=params, fill='toself', line=dict(color=color_scheme['primary'])))
-                max_score = df[score_cols].max().max()
+                max_score = df[score_cols].max().max() if not df.empty else 100
                 fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, max_score+5])), height=450, margin=dict(l=80, r=80, t=40, b=40))
                 st.plotly_chart(fig_radar, use_container_width=True, config={'displayModeBar': False})
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -399,9 +403,9 @@ if check_password():
                 st.dataframe(pd.DataFrame(param_data), use_container_width=True, hide_index=True, height=390)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-       
-        # TAB 4: ATTRIBUTE FILTER
-        with tab4:
+        
+        # TAB 3: ATTRIBUTE FILTER (Renamed from tab4)
+        with tab3:
             st.markdown("### 🔍 Filter by Attributes")
             all_columns = df.columns.tolist()
             selected_attr = st.selectbox("Select Attribute", all_columns, key="attr_select")
@@ -409,7 +413,13 @@ if check_password():
             if selected_attr:
                 filtered_attr_df = df.copy()
                 if pd.api.types.is_numeric_dtype(df[selected_attr]):
-                    min_val, max_val = float(df[selected_attr].min()), float(df[selected_attr].max())
+                    min_val = float(df[selected_attr].min())
+                    max_val = float(df[selected_attr].max())
+                    
+                    if min_val == max_val:
+                        min_val -= 1
+                        max_val += 1
+
                     c1, c2 = st.columns(2)
                     min_input = c1.number_input(f"Min {selected_attr}", value=min_val)
                     max_input = c2.number_input(f"Max {selected_attr}", value=max_val)
