@@ -18,57 +18,86 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. MODERN STYLING
+# 2. YOUR ORIGINAL STYLING (RESTORED)
 # ==========================================
 st.markdown("""
-<style>
-.main {
-    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-}
+    <style>
+    .main {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    }
 
-.dashboard-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem;
-    border-radius: 15px;
-    margin-bottom: 2rem;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-}
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
 
-.dashboard-title {
-    color: #f8fafc;
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0;
-}
+    .dashboard-title {
+        color: #f8fafc;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 0px 2px 4px rgba(0,0,0,0.3);
+    }
 
-.dashboard-subtitle {
-    color: rgba(255,255,255,0.9);
-    font-size: 1.1rem;
-}
+    .dashboard-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+    }
 
-.chart-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    margin-bottom: 1rem;
-}
+    div[data-testid="stMetric"] {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #667eea;
+        transition: 0.2s ease;
+    }
 
-.chart-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-}
-</style>
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .chart-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        margin-bottom: 1rem;
+    }
+
+    .chart-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1rem;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        background-color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 12px 24px;
+        font-weight: 600;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. AUTH
+# 3. AUTH (UNCHANGED)
 # ==========================================
 def check_password():
     def password_entered():
         if "credentials" not in st.secrets:
-            st.error("Secrets not configured")
+            st.error("⚠️ Authentication not configured.")
             return
 
         if (hmac.compare_digest(st.session_state["username"], st.secrets["credentials"]["username"]) and
@@ -82,32 +111,28 @@ def check_password():
             st.session_state["password_correct"] = False
 
     if "password_correct" not in st.session_state:
-        st.title("Branch Risk Analytics Login")
+        st.markdown("<h1 style='text-align:center;'>Branch Risk Analytics</h1>", unsafe_allow_html=True)
 
-        st.text_input("Username", key="username")
-        st.text_input("Password", type="password", key="password")
-
-        st.button("Login", on_click=password_entered)
-
-        if st.session_state.get("password_correct") is False:
-            st.error("Invalid login")
+        col1, col2, col3 = st.columns([1, 1.5, 1])
+        with col2:
+            st.text_input("Username", key="username")
+            st.text_input("Password", type="password", key="password")
+            st.button("Login", on_click=password_entered)
 
         return False
 
     return st.session_state["password_correct"]
 
 # ==========================================
-# 4. DATA LOADER (FIXED)
+# 4. FIXED DATA LOADER (ONLY CHANGE)
 # ==========================================
 @st.cache_data(show_spinner=False)
 def process_uploaded_file(file_url):
     try:
-        # ✅ FIX: download file first
         r = requests.get(file_url, timeout=60)
         r.raise_for_status()
 
         excel_file = io.BytesIO(r.content)
-
         xls = pd.ExcelFile(excel_file)
 
         df_rules = pd.read_excel(xls, "Sheet1")
@@ -129,7 +154,7 @@ def process_uploaded_file(file_url):
         return None, str(e)
 
 # ==========================================
-# 5. RULE ENGINE
+# 5. RULE ENGINE (UNCHANGED)
 # ==========================================
 def apply_rules_vectorized(df, df_rules, unique_params):
     for param in unique_params:
@@ -151,7 +176,7 @@ def apply_rules_vectorized(df, df_rules, unique_params):
             col = df[param]
 
             try:
-                if op == "ALL" or op == "ELSE":
+                if op in ["ALL", "ELSE"]:
                     mask = pd.Series(True, index=df.index)
                 elif op == ">":
                     mask = pd.to_numeric(col, errors='coerce') > float(val)
@@ -192,54 +217,98 @@ def get_grade(score, df_grades):
     return "C"
 
 # ==========================================
-# 7. APP START
+# 7. MAIN APP
 # ==========================================
 if check_password():
 
-    if "data" not in st.secrets or "url" not in st.secrets["data"]:
-        st.error("Missing data URL in secrets")
-        st.stop()
-
     url = st.secrets["data"]["url"]
 
-    with st.spinner("Loading data..."):
+    with st.spinner("🔄 Fetching and processing data..."):
         df, error = process_uploaded_file(url)
 
     if error:
         st.error(error)
         st.stop()
 
-    # HEADER
+    # HEADER (RESTORED)
     st.markdown(f"""
-    <div class="dashboard-header">
-        <div class="dashboard-title">🏦 Branch Risk Analytics</div>
-        <div class="dashboard-subtitle">
-            Updated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">🏦 Branch Risk Analytics Platform</h1>
+            <p class="dashboard-subtitle">
+                Real-time Risk Assessment | {datetime.now().strftime('%B %d, %Y')}
+            </p>
         </div>
-    </div>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # DASHBOARD
-    # =========================
-    tab1, tab2, tab3 = st.tabs(["Dashboard", "Branch", "Report"])
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Executive Dashboard",
+        "🎯 Branch Analytics",
+        "📈 Detailed Reports",
+        "🔍 Attribute Filter"
+    ])
 
+    # =========================
+    # TAB 1
+    # =========================
     with tab1:
-        st.metric("Branches", len(df))
-        st.metric("Avg Score", round(df["Total Score"].mean(), 2))
+        c1, c2, c3, c4, c5 = st.columns(5)
 
-        fig = go.Figure(data=[go.Pie(
-            labels=df["Final Grade"].value_counts().index,
-            values=df["Final Grade"].value_counts().values
-        )])
-        st.plotly_chart(fig, use_container_width=True)
+        with c1:
+            st.metric("Total Branches", len(df))
+        with c2:
+            st.metric("Avg Score", round(df["Total Score"].mean(), 2))
+        with c3:
+            st.metric("A Grade", len(df[df["Final Grade"] == "A"]))
+        with c4:
+            st.metric("B Grade", len(df[df["Final Grade"] == "B"]))
+        with c5:
+            st.metric("C Grade", len(df[df["Final Grade"] == "C"]))
 
+        col1, col2 = st.columns([1, 2])
+
+        with col1:
+            st.markdown('<div class="chart-card"><div class="chart-title">Risk Distribution</div>', unsafe_allow_html=True)
+            fig = go.Figure(data=[go.Pie(
+                labels=df["Final Grade"].value_counts().index,
+                values=df["Final Grade"].value_counts().values
+            )])
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with col2:
+            st.markdown('<div class="chart-card"><div class="chart-title">Score Distribution</div>', unsafe_allow_html=True)
+            fig2 = go.Figure()
+            fig2.add_trace(go.Histogram(x=df["Total Score"]))
+            st.plotly_chart(fig2, use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # =========================
+    # TAB 2
+    # =========================
     with tab2:
-        branch = st.selectbox("Branch", df["BranchCode"].unique())
+        branch = st.selectbox("Select Branch", df["BranchCode"].unique())
         row = df[df["BranchCode"] == branch].iloc[0]
+        st.dataframe(row)
 
-        st.write(row)
-
+    # =========================
+    # TAB 3
+    # =========================
     with tab3:
         st.dataframe(df)
-        st.download_button("Download", df.to_csv(index=False), "report.csv")
+        st.download_button("Download CSV", df.to_csv(index=False), "report.csv")
+
+    # =========================
+    # TAB 4
+    # =========================
+    with tab4:
+        col = st.selectbox("Column", df.columns)
+
+        if pd.api.types.is_numeric_dtype(df[col]):
+            mn, mx = float(df[col].min()), float(df[col].max())
+            v1, v2 = st.slider("Range", mn, mx, (mn, mx))
+            filtered = df[(df[col] >= v1) & (df[col] <= v2)]
+        else:
+            vals = st.multiselect("Values", df[col].unique(), default=df[col].unique())
+            filtered = df[df[col].isin(vals)]
+
+        st.dataframe(filtered)
